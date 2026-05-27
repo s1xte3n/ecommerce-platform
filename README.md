@@ -55,12 +55,14 @@ Clean Architecture: Api → Application → Domain
 
 ## 📁 Project Structure
 
+```
 apps/api/
 ├── ECommerce.Api/             # Web API & Controllers
 ├── ECommerce.Domain/          # Entities, Value Objects, Interfaces
 ├── ECommerce.Application/     # CQRS Handlers & Validators
 ├── ECommerce.Infrastructure/  # EF Core, Repositories, Cache
 └── ECommerce.Shared/          # Shared Utilities
+```
 
 ## 📋 Features Implemented
 
