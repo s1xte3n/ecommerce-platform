@@ -1,0 +1,58 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.vs/
+*.DotSettings.user
+*.csproj.user
+packages/
+
+# Node
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# Infrastructure
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+cdk.out/
+cdk.context.json
+
+# IDE
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+*.pem
+*.key
+*.pfx
+credentials.json
+secrets.yaml
+appsettings.*.local.json
+
+# Logs
+*.log
+logs/
+serilog/
+
+# Test
+TestResults/
+coverage/
+*.trx
+
+# Docker
+*.tar

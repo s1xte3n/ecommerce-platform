@@ -1,0 +1,127 @@
+# File: .github/workflows/ci.yml
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '20'
+
+jobs:
+  lint-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Lint Backend
+        run: |
+          dotnet format style --verify-no-changes --verbosity diagnostic
+        working-directory: apps/api
+        continue-on-error: true
+
+  lint-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            cd apps/frontend && npm ci
+          fi
+      - name: Lint
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            cd apps/frontend && npm run lint
+          fi
+        continue-on-error: true
+      - name: Type Check
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            cd apps/frontend && npm run type-check
+          fi
+        continue-on-error: true
+
+  test-backend:
+    needs: lint-backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ecommerce_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore
+        run: dotnet restore
+        working-directory: apps/api
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        working-directory: apps/api
+      - name: Test
+        run: dotnet test --configuration Release --no-build --logger "trx"
+        working-directory: apps/api
+        env:
+          ConnectionStrings__DefaultConnection: "Host=localhost;Database=ecommerce_test;Username=test_user;Password=test_password"
+
+  test-frontend:
+    needs: lint-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            cd apps/frontend && npm ci
+          fi
+      - name: Test
+        run: |
+          if [ -f "apps/frontend/package.json" ]; then
+            cd apps/frontend && npm test -- --coverage --ci
+          fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
