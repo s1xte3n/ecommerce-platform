@@ -1,5 +1,3 @@
-# File: docs/operations/deployment-checklist.md
-
 # Production Deployment Checklist
 
 ## Pre-Deployment
