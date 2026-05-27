@@ -1,7 +1,4 @@
 
-```markdown
-# File: docs/architecture/security.md
-
 # Security Model
 
 ## Authentication
