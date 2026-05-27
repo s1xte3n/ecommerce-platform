@@ -1,5 +1,3 @@
-# File: docs/operations/deployment-flow.md
-
 # Deployment Flow
 
 ## Overview
